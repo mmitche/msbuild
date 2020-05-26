@@ -580,6 +580,9 @@ namespace Microsoft.Build.Logging
                 return;
             }
 
+            // Otherwise, grab the entries and pass off to the ItemsCollector,
+            // writing the 
+
             var entries = items.OfType<DictionaryEntry>()
                 .Where(e => e.Key is string && e.Value is ITaskItem)
                 .ToArray();
@@ -629,7 +632,9 @@ namespace Microsoft.Build.Logging
 
         private void WriteProperties(IEnumerable properties)
         {
-            if (properties == null)
+            Write(0);
+
+            /*if (properties == null)
             {
                 Write(0);
                 return;
@@ -654,7 +659,7 @@ namespace Microsoft.Build.Logging
                     Write("");
                     Write("");
                 }
-            }
+            }*/
         }
 
         private void Write(BuildEventContext buildEventContext)

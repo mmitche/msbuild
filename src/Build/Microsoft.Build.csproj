@@ -154,6 +154,7 @@
     <Compile Include="BackEnd\BuildManager\CacheAggregator.cs" />
     <Compile Include="BackEnd\Components\Caching\ConfigCacheWithOverride.cs" />
     <Compile Include="BackEnd\Components\Caching\ResultsCacheWithOverride.cs" />
+    <Compile Include="Logging\BinaryLogger\ItemsCollector.cs" />
     <Compile Include="ObjectModelRemoting\ConstructionObjectLinks\ProjectUsingTaskParameterElementLink.cs" />
     <Compile Include="ObjectModelRemoting\ExternalProjectsProvider.cs" />
     <Compile Include="ObjectModelRemoting\LinkedObjectFactory.cs" />
