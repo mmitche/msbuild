@@ -10,7 +10,7 @@
 # See example call for this script below.
 #
 #  - task: Bash@3
-#    displayName: Setup Private Feeds
+#    displayName: Setup Private Feeds Credentials
 #    inputs:
 #      filePath: $(Build.SourcesDirectory)/eng/common/SetupNugetSources.sh
 #      arguments: $(Build.SourcesDirectory)/NuGet.config
