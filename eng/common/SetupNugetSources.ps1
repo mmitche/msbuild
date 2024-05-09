@@ -39,7 +39,7 @@ if ($Password -and $env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS -ne $null) {
 }
 
 # Add source entry to PackageSources
-function AddPackageSource($sources, $SourceName, $SourceEndPoint, $creds, $Username, $pwd) {
+function AddPackageSource($sources, $SourceName, $SourceEndPoint, $pwd) {
     $packageSource = $sources.SelectSingleNode("add[@key='$SourceName']")
     
     if ($packageSource -eq $null)
@@ -54,12 +54,12 @@ function AddPackageSource($sources, $SourceName, $SourceEndPoint, $creds, $Usern
     }
 
     if ($Password) {
-        AddCredential -Creds $creds -Source $SourceEndPoint -pwd $pwd
+        AddCredential -Source $SourceEndPoint -pwd $pwd
     }
 }
 
 # Add a new feed endpoint credential
-function AddCredential($creds, $source, $pwd) {
+function AddCredential($source, $pwd) {
     if ($feedEndpoints -eq $null) {
         $feedEndpoints = @{ endpointCredentials = @() }
     }
@@ -71,7 +71,7 @@ function AddCredential($creds, $source, $pwd) {
     }
 }
 
-function InsertMaestroInternalFeedCredentials($Sources, $Creds, $pwd) {
+function InsertMaestroInternalFeedCredentials($Sources, $pwd) {
     if ($Password) {
         $maestroInternalSources = $Sources.SelectNodes("add[contains(@key,'darc-int')]")
 
@@ -79,7 +79,7 @@ function InsertMaestroInternalFeedCredentials($Sources, $Creds, $pwd) {
 
         ForEach ($PackageSource in $maestroInternalSources) {
             Write-Host "`tInserting credential for Maestro's feed:" $PackageSource.Key
-            AddCredential -Creds $creds -Source $PackageSource.value -pwd $pwd
+            AddCredential -Source $PackageSource.value -pwd $pwd
         }
     }
 }
@@ -117,13 +117,13 @@ if ($disabledSources -ne $null) {
     EnableInternalPackageSources -DisabledPackageSources $disabledSources
 }
 
-InsertMaestroInternalFeedCredentials -Sources $sources -Creds $creds -pwd $Password
+InsertMaestroInternalFeedCredentials -Sources $sources -pwd $Password
 
 # 3.1 uses a different feed url format so it's handled differently here
 $dotnet31Source = $sources.SelectSingleNode("add[@key='dotnet3.1']")
 if ($dotnet31Source -ne $null) {
-    AddPackageSource -Sources $sources -SourceName "dotnet3.1-internal" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/_packaging/dotnet3.1-internal/nuget/v2" -Creds $creds -Username $userName -pwd $Password
-    AddPackageSource -Sources $sources -SourceName "dotnet3.1-internal-transport" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/_packaging/dotnet3.1-internal-transport/nuget/v2" -Creds $creds -Username $userName -pwd $Password
+    AddPackageSource -Sources $sources -SourceName "dotnet3.1-internal" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/_packaging/dotnet3.1-internal/nuget/v2" -pwd $Password
+    AddPackageSource -Sources $sources -SourceName "dotnet3.1-internal-transport" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/_packaging/dotnet3.1-internal-transport/nuget/v2" -pwd $Password
 }
 
 $dotnetVersions = @('5','6','7','8')
@@ -132,8 +132,8 @@ foreach ($dotnetVersion in $dotnetVersions) {
     $feedPrefix = "dotnet" + $dotnetVersion;
     $dotnetSource = $sources.SelectSingleNode("add[@key='$feedPrefix']")
     if ($dotnetSource -ne $null) {
-        AddPackageSource -Sources $sources -SourceName "$feedPrefix-internal" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/internal/_packaging/$feedPrefix-internal/nuget/v2" -Creds $creds -Username $userName -pwd $Password
-        AddPackageSource -Sources $sources -SourceName "$feedPrefix-internal-transport" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/internal/_packaging/$feedPrefix-internal-transport/nuget/v2" -Creds $creds -Username $userName -pwd $Password
+        AddPackageSource -Sources $sources -SourceName "$feedPrefix-internal" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/internal/_packaging/$feedPrefix-internal/nuget/v2" -pwd $Password
+        AddPackageSource -Sources $sources -SourceName "$feedPrefix-internal-transport" -SourceEndPoint "https://pkgs.dev.azure.com/dnceng/internal/_packaging/$feedPrefix-internal-transport/nuget/v2" -pwd $Password
     }
 }
 
