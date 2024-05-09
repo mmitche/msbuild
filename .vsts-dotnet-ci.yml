@@ -4,7 +4,6 @@ trigger:
 - vs*
 
 variables:
-- group: AzureDevOps-Artifact-Feeds-Pats
 - name: cfsNugetWarnLevel
   value: warn
 - name: nugetMultiFeedWarnLevel
@@ -18,13 +17,7 @@ jobs:
   pool:
     vmImage: 'windows-2022'
   steps:
-  - task: PowerShell@2
-    displayName: Setup Private Feeds Credentials
-    inputs:
-      filePath: $(Build.SourcesDirectory)/eng/common/SetupNugetSources.ps1
-      arguments: -ConfigFile $(Build.SourcesDirectory)/NuGet.config -Password $Env:Token
-    env:
-      Token: $(dn-bot-dnceng-artifact-feeds-rw)
+  - template: /eng/common/templates/enable-internal-sources.yml
   - task: BatchScript@1
     displayName: cibuild_bootstrapped_msbuild.cmd
     inputs:
