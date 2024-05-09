@@ -139,6 +139,8 @@ foreach ($dotnetVersion in $dotnetVersions) {
 
 $doc.Save($filename)
 
+Write-Host $feedEndpoints | ConvertTo-Json
+
 # If any credentials were added or altered, update the VS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable
 if ($feedEndpoints -ne $null) {
     Write-PipelineSetVariable -Name 'VS_NUGET_EXTERNAL_FEED_ENDPOINTS' -Value $($feedEndpoints | ConvertTo-Json) -IsMultiJobVariable $false
