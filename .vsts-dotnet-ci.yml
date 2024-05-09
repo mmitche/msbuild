@@ -17,7 +17,7 @@ jobs:
   pool:
     vmImage: 'windows-2022'
   steps:
-  - template: /eng/common/templates/enable-internal-sources.yml
+  - template: /eng/common/templates/steps/enable-internal-sources.yml
   - task: BatchScript@1
     displayName: cibuild_bootstrapped_msbuild.cmd
     inputs:
