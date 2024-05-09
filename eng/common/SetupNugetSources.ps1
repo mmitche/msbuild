@@ -9,7 +9,7 @@
 #
 #  - task: NuGetAuthenticate@1
 #  - task: PowerShell@2
-#    displayName: Setup Private Feeds Credentials
+#    displayName: Setup Private Feeds
 #    condition: eq(variables['Agent.OS'], 'Windows_NT')
 #    inputs:
 #      filePath: $(Build.SourcesDirectory)/eng/common/SetupNugetSources.ps1
