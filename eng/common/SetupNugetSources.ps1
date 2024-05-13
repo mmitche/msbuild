@@ -35,6 +35,7 @@ $feedEndpoints = $null
 # If a credential is provided, ensure that we don't overwrite the current set of
 # credentials that may have been provided by a previous call to the credential provider.
 if ($Password -and $env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS -ne $null) {
+    Write-Host "Loading existing feed endpoints from environment variable."
     $feedEndpoints = $env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS | ConvertFrom-Json
 }
 
@@ -61,14 +62,18 @@ function AddPackageSource($sources, $SourceName, $SourceEndPoint, $pwd) {
 # Add a new feed endpoint credential
 function AddCredential($source, $pwd) {
     if ($feedEndpoints -eq $null) {
+        Write-Host "Creating new feedEndpoints object."
         $feedEndpoints = @{ endpointCredentials = @() }
     }
 
+    Write-Host "Adding credential for $source."
     $feedEndpoints.endpointCredentials += @{
         endpoint = $source;
         username = "";
         password = $pwd
     }
+
+    Write-Host $($feedEndpoints | ConvertTo-Json)
 }
 
 function InsertMaestroInternalFeedCredentials($Sources, $pwd) {
@@ -139,7 +144,7 @@ foreach ($dotnetVersion in $dotnetVersions) {
 
 $doc.Save($filename)
 
-Write-Host $feedEndpoints | ConvertTo-Json
+Write-Host $($feedEndpoints | ConvertTo-Json)
 
 # If any credentials were added or altered, update the VS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable
 if ($feedEndpoints -ne $null) {
