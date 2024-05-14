@@ -145,8 +145,8 @@ $doc.Save($filename)
 
 Write-Host $($feedEndpoints | ConvertTo-Json)
 
-# If any credentials were added or altered, update the VS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable
+# If any credentials were added or altered, update the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable
 if ($feedEndpoints.endpointCredentials -ne $null) {
     $ci = $true
-    Write-PipelineSetVariable -Name 'VS_NUGET_EXTERNAL_FEED_ENDPOINTS' -Value $($feedEndpoints | ConvertTo-Json) -IsMultiJobVariable $false
+    Write-PipelineSetVariable -Name 'VSS_NUGET_EXTERNAL_FEED_ENDPOINTS' -Value $($feedEndpoints | ConvertTo-Json) -IsMultiJobVariable $false
 }
