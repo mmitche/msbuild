@@ -72,6 +72,7 @@ function AddCredential($endpointCredentials, $source, $pwd) {
     }
 
     Write-Host $($endpointCredentials | ConvertTo-Json)
+    return $endpointCredentials
 }
 
 function InsertMaestroInternalFeedCredentials($Sources, $pwd) {
@@ -82,7 +83,7 @@ function InsertMaestroInternalFeedCredentials($Sources, $pwd) {
 
         ForEach ($PackageSource in $maestroInternalSources) {
             Write-Host "`tInserting credential for Maestro's feed:" $PackageSource.Key
-            AddCredential -endpointCredentials $feedEndpoints.endpointCredentials -source $PackageSource.value -pwd $pwd
+            $feedEndpoints.endpointCredentials = AddCredential -endpointCredentials $feedEndpoints.endpointCredentials -source $PackageSource.value -pwd $pwd
         }
     }
 }
