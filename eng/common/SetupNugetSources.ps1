@@ -147,5 +147,6 @@ Write-Host $($feedEndpoints | ConvertTo-Json)
 
 # If any credentials were added or altered, update the VS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable
 if ($feedEndpoints.endpointCredentials -ne $null) {
+    Write-Host "Setting feed endpoints in environment variable."
     Write-PipelineSetVariable -Name 'VS_NUGET_EXTERNAL_FEED_ENDPOINTS' -Value $($feedEndpoints | ConvertTo-Json) -IsMultiJobVariable $false
 }
