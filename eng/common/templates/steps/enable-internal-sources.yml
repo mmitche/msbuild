@@ -26,3 +26,4 @@ steps:
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/common/SetupNugetSources.ps1
         arguments: -ConfigFile $(Build.SourcesDirectory)/NuGet.config -Password $(dnceng-artifacts-feeds-read-access-token)
+    - task: NuGetAuthenticate@1
