@@ -67,7 +67,6 @@ function AddCredential([array]$endpointCredentials, $source, $pwd) {
     Write-Host "Adding credential for $source."
     $endpointCredentials += @{
         endpoint = $source;
-        username = "";
         password = $pwd
     }
 
