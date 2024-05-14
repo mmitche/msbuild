@@ -148,4 +148,5 @@ Write-Host $($feedEndpoints | ConvertTo-Json)
 if ($feedEndpoints.endpointCredentials -ne $null) {
     $ci = $true
     Write-PipelineSetVariable -Name 'VSS_NUGET_EXTERNAL_FEED_ENDPOINTS' -Value $($feedEndpoints | ConvertTo-Json) -IsMultiJobVariable $false
+    Write-PipelineSetVariable -Name 'NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE_ENABLED' -Value "False" -IsMultiJobVariable $false
 }
