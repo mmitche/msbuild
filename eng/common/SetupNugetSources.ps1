@@ -32,6 +32,10 @@ Set-StrictMode -Version 2.0
 
 $feedEndpoints = $null
 
+if ($Password -eq $null) {
+    Write-Host "No password provided. Will not add credentials to the NuGet.config."
+}
+
 # If a credential is provided, ensure that we don't overwrite the current set of
 # credentials that may have been provided by a previous call to the credential provider.
 if ($Password -and $env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS -ne $null) {

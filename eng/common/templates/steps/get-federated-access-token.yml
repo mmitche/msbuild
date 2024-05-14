@@ -16,4 +16,5 @@ steps:
 
       # Set the access token as a secret, so it doesn't get leaked in the logs
       Write-Host "##vso[task.setsecret]$accessToken"
+      Write-Host "Setting '${{ parameters.outputVariableName }}' with the access token value"
       Write-Host "##vso[task.setvariable variable=${{ parameters.outputVariableName }}]$accessToken"
