@@ -58,12 +58,12 @@ function AddPackageSource($sources, $SourceName, $SourceEndPoint, $pwd) {
     }
 
     if ($Password) {
-        AddCredential -endpointCredentials $feedEndpoints.endpointCredentials -source $SourceEndPoint -pwd $pwd
+        $feedEndpoints.endpointCredentials = AddCredential -endpointCredentials $feedEndpoints.endpointCredentials -source $SourceEndPoint -pwd $pwd
     }
 }
 
 # Add a new feed endpoint credential
-function AddCredential($endpointCredentials, $source, $pwd) {
+function AddCredential([array]$endpointCredentials, $source, $pwd) {
     Write-Host "Adding credential for $source."
     $endpointCredentials += @{
         endpoint = $source;
