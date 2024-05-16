@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-# This script adds internal feeds required to build commits that depend on intenral package sources. For instance,
+# This script adds internal feeds required to build commits that depend on internal package sources. For instance,
 # dotnet6-internal would be added automatically if dotnet6 was found in the nuget.config file. In addition also enables
 # disabled internal Maestro (darc-int*) feeds.
 # 
-# Optionally, this script also adds a credential entry for each of the internal feeds if supplied.
-# This option will be removed ASAP, when no longer in use. This is a workaround for feed auth issues that dates to the 3.1 release.
+# Optionally, this script also adds a credential entry for each of the internal feeds if supplied. This credential
+# is added via the standard environment variable VSS_NUGET_EXTERNAL_FEED_ENDPOINTS. See
+# https://github.com/microsoft/artifacts-credprovider/tree/v1.1.1?tab=readme-ov-file#environment-variables for more details
 #
 # See example call for this script below.
 #
@@ -38,13 +39,21 @@ scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 . "$scriptroot/tools.sh"
 
 if [ ! -f "$ConfigFile" ]; then
-    Write-PipelineTelemetryError -Category 'Build' "Error: Eng/common/SetupNugetSources.sh returned a non-zero exit code. Couldn't find the NuGet config file: $ConfigFile"
+    Write-PipelineTelemetryError -Category 'Build' "Error: eng/common/SetupNugetSources.sh returned a non-zero exit code. Couldn't find the NuGet config file: $ConfigFile"
     ExitWithExitCode 1
 fi
 
 if [[ `uname -s` == "Darwin" ]]; then
     NL=$'\\\n'
     TB=''
+fi
+
+# If the credential is non-empty and the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS is set, suggest that the user
+# use the powershell version instead or reorder their calls to start with an empty VSS_NUGET_EXTERNAL_FEED_ENDPOINTS.
+# This avoids complicated editing of JSON strings in bash.
+if [ "$CredToken" && -n "${VSS_NUGET_EXTERNAL_FEED_ENDPOINTS:-}" ]; then
+    Write-PipelineTelemetryError -Category 'Build' "Error: eng/common/SetupNugetSources.sh does not support setting credentials when VSS_NUGET_EXTERNAL_FEED_ENDPOINTS is set. Please use the powershell version of this script instead."
+    ExitWithExitCode 1
 fi
 
 # Ensure there is a <packageSources>...</packageSources> section.
@@ -57,44 +66,12 @@ if [ "$?" != "0" ]; then
     sed -i.bak "s|$ConfigNodeHeader|$ConfigNodeHeader${NL}$PackageSourcesTemplate|" $ConfigFile
 fi
 
-# Ensure there is a <packageSourceCredentials>...</packageSourceCredentials> section. 
-grep -i "<packageSourceCredentials>" $ConfigFile
-if [ "$?" != "0" ]; then
-    echo "Adding <packageSourceCredentials>...</packageSourceCredentials> section."
+PackageEndpoints=()
+EndpointCredentials="["
 
-    PackageSourcesNodeFooter="</packageSources>"
-    PackageSourceCredentialsTemplate="${TB}<packageSourceCredentials>${NL}${TB}</packageSourceCredentials>"
+if 
 
-    sed -i.bak "s|$PackageSourcesNodeFooter|$PackageSourcesNodeFooter${NL}$PackageSourceCredentialsTemplate|" $ConfigFile
-fi
-
-PackageSources=()
-
-# Ensure dotnet3.1-internal and dotnet3.1-internal-transport are in the packageSources if the public dotnet3.1 feeds are present
-grep -i "<add key=\"dotnet3.1\"" $ConfigFile
-if [ "$?" == "0" ]; then
-    grep -i "<add key=\"dotnet3.1-internal\"" $ConfigFile
-    if [ "$?" != "0" ]; then
-        echo "Adding dotnet3.1-internal to the packageSources."
-        PackageSourcesNodeFooter="</packageSources>"
-        PackageSourceTemplate="${TB}<add key=\"dotnet3.1-internal\" value=\"https://pkgs.dev.azure.com/dnceng/_packaging/dotnet3.1-internal/nuget/v2\" />"
-
-        sed -i.bak "s|$PackageSourcesNodeFooter|$PackageSourceTemplate${NL}$PackageSourcesNodeFooter|" $ConfigFile
-    fi
-    PackageSources+=('dotnet3.1-internal')
-
-    grep -i "<add key=\"dotnet3.1-internal-transport\">" $ConfigFile
-    if [ "$?" != "0" ]; then
-        echo "Adding dotnet3.1-internal-transport to the packageSources."
-        PackageSourcesNodeFooter="</packageSources>"
-        PackageSourceTemplate="${TB}<add key=\"dotnet3.1-internal-transport\" value=\"https://pkgs.dev.azure.com/dnceng/_packaging/dotnet3.1-internal-transport/nuget/v2\" />"
-
-        sed -i.bak "s|$PackageSourcesNodeFooter|$PackageSourceTemplate${NL}$PackageSourcesNodeFooter|" $ConfigFile
-    fi
-    PackageSources+=('dotnet3.1-internal-transport')
-fi
-
-DotNetVersions=('5' '6' '7' '8')
+DotNetVersions=('3.1', '5' '6' '7' '8')
 
 for DotNetVersion in ${DotNetVersions[@]} ; do
     FeedPrefix="dotnet${DotNetVersion}";
@@ -104,44 +81,54 @@ for DotNetVersion in ${DotNetVersions[@]} ; do
         if [ "$?" != "0" ]; then
             echo "Adding $FeedPrefix-internal to the packageSources."
             PackageSourcesNodeFooter="</packageSources>"
-            PackageSourceTemplate="${TB}<add key=\"$FeedPrefix-internal\" value=\"https://pkgs.dev.azure.com/dnceng/internal/_packaging/$FeedPrefix-internal/nuget/v2\" />"
+            PackageEndpoint=""
+            if [ "${DotNetVersion}" == "3.1" ]; then
+                PackageEndpoint="https://pkgs.dev.azure.com/dnceng/_packaging/$FeedPrefix-internal/nuget/v3/index.json"
+            else
+                PackageEndpoint="https://pkgs.dev.azure.com/dnceng/internal/_packaging/$FeedPrefix-internal/nuget/v3/index.json"
+            fi
+
+            PackageSourceTemplate="${TB}<add key=\"$FeedPrefix-internal\" value=\"$PackageEndpoint\" />"
 
             sed -i.bak "s|$PackageSourcesNodeFooter|$PackageSourceTemplate${NL}$PackageSourcesNodeFooter|" $ConfigFile
         fi
-        PackageSources+=("$FeedPrefix-internal")
+        PackageEndpoints+=("$PackageEndpoint")
 
         grep -i "<add key=\"$FeedPrefix-internal-transport\">" $ConfigFile
         if [ "$?" != "0" ]; then
             echo "Adding $FeedPrefix-internal-transport to the packageSources."
             PackageSourcesNodeFooter="</packageSources>"
-            PackageSourceTemplate="${TB}<add key=\"$FeedPrefix-internal-transport\" value=\"https://pkgs.dev.azure.com/dnceng/internal/_packaging/$FeedPrefix-internal-transport/nuget/v2\" />"
+            PackageEndpoint=""
+            if [ "${DotNetVersion}" == "3.1" ]; then
+                PackageEndpoint="https://pkgs.dev.azure.com/dnceng/_packaging/$FeedPrefix-internal/nuget/v3/index.json"
+            else
+                PackageEndpoint="https://pkgs.dev.azure.com/dnceng/internal/_packaging/$FeedPrefix-internal/nuget/v3/index.json"
+            fi
+            PackageSourceTemplate="${TB}<add key=\"$FeedPrefix-internal\" value=\"$PackageEndpoint\" />"
 
             sed -i.bak "s|$PackageSourcesNodeFooter|$PackageSourceTemplate${NL}$PackageSourcesNodeFooter|" $ConfigFile
         fi
-        PackageSources+=("$FeedPrefix-internal-transport")
+        PackageEndpoints+=("$PackageEndpoint")
     fi
 done
 
 # I want things split line by line
 PrevIFS=$IFS
 IFS=$'\n'
-PackageSources+="$IFS"
-PackageSources+=$(grep -oh '"darc-int-[^"]*"' $ConfigFile | tr -d '"')
+PackageEndpoints+="$IFS"
+PackageEndpoints+=$(grep -oh '"(https://pkgs.dev.azure.com/dnceng/|https://devdiv.pkgs.visualstudio.com/)internal/_packaging/darc-int-[^"]*"' $ConfigFile | tr -d '"')
 IFS=$PrevIFS
 
-if [ "$CredToken" ]; then
-    for FeedName in ${PackageSources[@]} ; do
-        # Check if there is no existing credential for this FeedName
-        grep -i "<$FeedName>" $ConfigFile 
-        if [ "$?" != "0" ]; then
-            echo "Adding credentials for $FeedName."
-
-            PackageSourceCredentialsNodeFooter="</packageSourceCredentials>"
-            NewCredential="${TB}${TB}<$FeedName>${NL}<add key=\"Username\" value=\"dn-bot\" />${NL}<add key=\"ClearTextPassword\" value=\"$CredToken\" />${NL}</$FeedName>"
-
-            sed -i.bak "s|$PackageSourceCredentialsNodeFooter|$NewCredential${NL}$PackageSourceCredentialsNodeFooter|" $ConfigFile
-        fi
+if [ "$CredToken" && ${#PackageEndpoints[@]} -gt 0 ]; then
+    echo "Adding credentials for the following internal feeds: ${PackageEndpoints[@]}"
+    for FeedName in ${PackageEndpoints[@]} ; do
+        EndpointCredentials += "{\"endpoint\":\"$FeedName\",\"password\":\"$CredToken\"},"
     done
+
+    EndpointCredentials += "]"
+    PackageSourceCredentials="{\"endpointCredentials\":$EndpointCredentials}"
+    ci=true
+    Write-PipelineSetVariable -name 'VSS_NUGET_EXTERNAL_FEED_ENDPOINTS' -value "$PackageSourceCredentials"
 fi
 
 # Re-enable any entries in disabledPackageSources where the feed name contains darc-int

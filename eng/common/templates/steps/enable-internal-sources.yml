@@ -26,4 +26,7 @@ steps:
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/common/SetupNugetSources.ps1
         arguments: -ConfigFile $(Build.SourcesDirectory)/NuGet.config -Password $(dnceng-artifacts-feeds-read-access-token)
+    # This is required in certain scenarios to install the ADO credential provider.
+    # It installed by default in some msbuild invocations (e.g. VS msbuild), but needs to be installed for others
+    # (e.g. dotnet msbuild).
     - task: NuGetAuthenticate@1

@@ -1,4 +1,4 @@
-# This script adds internal feeds required to build commits that depend on intenral package sources. For instance,
+# This script adds internal feeds required to build commits that depend on internal package sources. For instance,
 # dotnet6-internal would be added automatically if dotnet6 was found in the nuget.config file. In addition also enables
 # disabled internal Maestro (darc-int*) feeds.
 # 
@@ -35,10 +35,8 @@ $feedEndpoints = $null
 # If a credential is provided, ensure that we don't overwrite the current set of
 # credentials that may have been provided by a previous call to the credential provider.
 if ($Password -and $env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS -ne $null) {
-    Write-Host "Loading existing feed endpoints from environment variable."
     $feedEndpoints = $env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS | ConvertFrom-Json
 } elseif ($Password) {
-    Write-Host "Creating new endpoint credentials object."
     $feedEndpoints = @{ endpointCredentials = @() }
 }
 
@@ -48,6 +46,7 @@ function AddPackageSource($sources, $SourceName, $SourceEndPoint, $pwd) {
     
     if ($packageSource -eq $null)
     {
+        Write-Host "`tAdding package source" $PackageSource.Key
         $packageSource = $doc.CreateElement("add")
         $packageSource.SetAttribute("key", $SourceName)
         $packageSource.SetAttribute("value", $SourceEndPoint)
@@ -64,13 +63,10 @@ function AddPackageSource($sources, $SourceName, $SourceEndPoint, $pwd) {
 
 # Add a new feed endpoint credential
 function AddCredential([array]$endpointCredentials, $source, $pwd) {
-    Write-Host "Adding credential for $source."
     $endpointCredentials += @{
         endpoint = $source;
         password = $pwd
     }
-
-    Write-Host $($endpointCredentials | ConvertTo-Json)
     return $endpointCredentials
 }
 
@@ -78,10 +74,8 @@ function InsertMaestroInternalFeedCredentials($Sources, $pwd) {
     if ($Password) {
         $maestroInternalSources = $Sources.SelectNodes("add[contains(@key,'darc-int')]")
 
-        Write-Host "Inserting credentials for $($maestroInternalSources.Count) Maestro's internal feeds."
-
         ForEach ($PackageSource in $maestroInternalSources) {
-            Write-Host "`tInserting credential for Maestro's feed:" $PackageSource.Key
+            Write-Host "`tAdding credential for Maestro's feed:" $PackageSource.Key
             $feedEndpoints.endpointCredentials = AddCredential -endpointCredentials $feedEndpoints.endpointCredentials -source $PackageSource.value -pwd $pwd
         }
     }
@@ -142,10 +136,9 @@ foreach ($dotnetVersion in $dotnetVersions) {
 
 $doc.Save($filename)
 
-Write-Host $($feedEndpoints | ConvertTo-Json)
-
 # If any credentials were added or altered, update the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable
 if ($feedEndpoints.endpointCredentials -ne $null) {
+    # ci is set to true so vso logging commands will be used.
     $ci = $true
     Write-PipelineSetVariable -Name 'VSS_NUGET_EXTERNAL_FEED_ENDPOINTS' -Value $($feedEndpoints | ConvertTo-Json) -IsMultiJobVariable $false
     Write-PipelineSetVariable -Name 'NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE_ENABLED' -Value "False" -IsMultiJobVariable $false
